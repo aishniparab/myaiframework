@@ -1,0 +1,3 @@
+# exclude the following files
+env-nobel
+.DS_Store

@@ -1,0 +1,30 @@
+num_classes: 2
+num_context_per_class: 6
+num_probe_per_class: 1
+
+batch_size: 10
+dataset: bongard
+  dataset_args: 
+    root_path: '../ShapeBongard_V2'
+    img_h: 128
+    img_w: 128
+    img_dim: [128, 128]
+    one_hot_size: 3
+    drop_last: true #assuming dataset_size % batch_size != 0
+
+loss_fn: cross_entropy
+optimizer: adam
+optimizer_args:
+  learning_rate: 0.001
+  momentum: 0.9
+  weight_decay: 5e-4
+
+model: gcn
+model_args:
+  encoder: resnet15
+  encoder_args:
+
+num_epochs: 100
+
+
+
