@@ -5,7 +5,7 @@ import torch
 import torch.utils.data as data
 from tqdm import tqdm 
 from torchvision import transforms
-
+from utils.file_processing import image_file_to_array
 class BongardDataset(data.Dataset):
 	"""
 		https://github.com/NVlabs/Bongard-LOGO

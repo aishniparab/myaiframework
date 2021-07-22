@@ -19,12 +19,22 @@ optimizer_args:
   momentum: 0.9
   weight_decay: 5.e-4
 
+debug_mode: true
+debug_args: {'gaussian_args':
+              { 'mean_left': 0.1,
+                'mean_right': 0.8,
+                'std': 0.1,
+                'vector_dim': 128
+              }}
+
 model: linear
 model_args:
-  in_dim: 3
+  in_dim: 259 #131 #3
   out_dim: 1
-  #encoder: resnet
-  #encoder_args:
+  encoder: resnet
+  #encoder_args: optim_dec_rule
+
+
 
 seed: 123
 

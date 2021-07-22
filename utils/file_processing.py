@@ -1,6 +1,7 @@
 import torch
 from torchvision import transforms
 import imageio
+import numpy as np
 
 def image_file_to_array(filename,transform):
   """
