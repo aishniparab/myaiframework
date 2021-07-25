@@ -22,14 +22,14 @@ def get_loss_mask(y, num_flips=0, mask_type=True):
     for sample in y_train[:, :, :num_flips]:
       sample+=loss_mask 
   
-  if mask_type:
+  if mask_type: # mask context
     is_probe_mask = y_train.clone()
     is_probe_mask[:, :, -1] += torch.as_tensor([[-1, 0, 0], [0, -1, 0]], dtype=torch.float32)
     is_probe_mask = is_probe_mask.view(-1, 3)
     is_context_mask = torch.any(is_probe_mask, dim=1)
     loss_mask = ~is_context_mask
   else:
-    loss_mask = torch.ones(y_train.view(-1, 3).shape[0], dtype=torch.bool) # no masking for now see line 95
+    loss_mask = torch.ones(y_train.view(-1, 3).shape[0], dtype=torch.bool) # no masking context for now see line 95
   
   y_train = y_train.view(-1, 3) # (1*6*7*2, 3) = (84, 3) # for output to be (84,3) # dont view (-1, 3) ? forgot why
   
@@ -42,7 +42,7 @@ def compute_acc(model_output, labels):
     acc = correct / len(labels)  # Derive ratio of correct predictions.
     return acc
 
-def train(data, model, loss_fn, optimizer): 
+def train(data, model, loss_fn, optimizer): # refactor
     out, h = model(data.x.float(), data.edge_index.view(2, -1)) #num_edges))
     probe_preds = out[data.train_mask].view(-1, 2) #(batch_size, 2) #assumes out is single pred
     probe_y_right = data.y[data.train_mask].view(-1, 2)[:, 1] #(batch_size,) 

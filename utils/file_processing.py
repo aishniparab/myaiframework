@@ -2,6 +2,7 @@ import torch
 from torchvision import transforms
 import imageio
 import numpy as np
+import datetime
 
 def image_file_to_array(filename,transform):
   """
