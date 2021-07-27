@@ -26,7 +26,7 @@ debug_args: { 'debug_step': "labels_only",
 model: linear
 model_args:
   in_dim: 3 #259 #131 
-  out_dim: 1
+  out_dim: 1 
   encoder: resnet
   #encoder_args: optim_dec_rule
 
@@ -41,4 +41,5 @@ optimizer_args:
 
 train_args: 
   num_epochs: 5
+  train_mode: true
 

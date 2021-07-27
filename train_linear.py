@@ -13,20 +13,27 @@ from representation.graph.init import Graph
 from utils.debug import test_optimal_decision_rule, sample_x_from_gaussian
 from utils.embed_input import embed
 from utils.file_processing import save_list_to_file, get_dirname
-from utils.train import train
+from utils.train import train, val, reset_weights
+import numpy as np
 
 def main(config):
-
     # declare directories
     save_dir = args.save_dir
-    dir_name = get_dirname(args.experiment_tag, args.version)
     
-    #yaml.dump(config, open(os.path.join(save_dir, 'config.yaml'), 'w'))
+    if (config['train_args']['train_mode']):
+        dir_name = get_dirname(args.experiment_tag, args.version)
+        if not os.path.exists(os.path.join(save_dir, dir_name, 'trained_models')): 
+            os.makedirs(os.path.join(save_dir, dir_name, 'trained_models'))
+
     best_model_path = os.path.join(save_dir, dir_name, 'trained_models/best_model.pth')
     last_model_path = os.path.join(save_dir, dir_name, 'trained_models/last_model.pth')
+    flip_model_path = lambda i: os.path.join(save_dir, dir_name, 'trained_models/flip_{}_model.pth'.format(str(i)))
+    
+    # save config
+    yaml.dump(config, open(os.path.join(save_dir, dir_name, 'config.yaml'), 'w'))
     
     # for visualization
-    writer = SummaryWriter(os.path.join(save_dir, dir_name, 'tensorboard'))
+    writer = SummaryWriter(os.path.join(save_dir, dir_name, 'tensorboard/scalar'))
     
     # for gpu
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -88,24 +95,23 @@ def main(config):
         debug_step = config['debug_args']['debug_step']
         num_samples_per_class = num_context_per_class + num_probe_per_class
         
-        '''
+        
         ## Run single tests ## 
         # pass labels into model and flip them, compute loss on all (you should see a U shape)
         #test_optimal_decision_rule(tr_dataloader, model, loss_fn, optimizer, num_samples_per_class, graph.edge_index, device, img_h, img_w, "labels_only", None, None, None)
         
          #test_optimal_decision_rule(tr_dataloader, model, loss_fn, optimizer, num_samples_per_class, graph.edge_index, device, img_h, img_w, "resnet_labels", 1, None, None)
         
-        sample = sample_x_from_gaussian(config['debug_args']['gaussian_args']['mean_left'], 
-                                                        config['debug_args']['gaussian_args']['mean_right'], 
-                                                        config['debug_args']['gaussian_args']['std'], 
-                                                        batch_size, num_samples_per_class, num_classes, 
-                                                        config['debug_args']['gaussian_args']['vector_dim'])
+        #sample = sample_x_from_gaussian(config['debug_args']['gaussian_args']['mean_left'], 
+        #                                                config['debug_args']['gaussian_args']['mean_right'], 
+        #                                                config['debug_args']['gaussian_args']['std'], 
+        #                                                batch_size, num_samples_per_class, num_classes, 
+        #                                                config['debug_args']['gaussian_args']['vector_dim'])
         
         #test_optimal_decision_rule(tr_dataloader, model, loss_fn, optimizer, num_samples_per_class, graph.edge_index, device, img_h, img_w, "gaussian", None, sample, config['debug_args']['gaussian_args']['vector_dim'])
         #doesnt work with resnet 
         #test_optimal_decision_rule(tr_dataloader, model, loss_fn, optimizer, num_samples_per_class, graph.edge_index, device, img_h, img_w, "resnet_gaussian_labels", 1, sample, config['debug_args']['gaussian_args']['vector_dim'])
-        '''
-
+        
         train_loss = []
         train_acc = []
         val_loss = []
@@ -113,66 +119,77 @@ def main(config):
         best_acc = 0
         best_state = None
         
+        print("Number of training iterations: ", num_tr_iterations)
+        print("Number of validation iterations: ", num_val_iterations)
         # flip labels
         num_flips = num_samples_per_class + num_probe_per_class # total num labels = context + probe
         for i in range(num_flips):
             print('=== Flip: {} ==='.format(i))
             # train each flip 
-
             for epoch in range(1, config['train_args']['num_epochs'] + 1):
-              print('=== Epoch: {} ==='.format(epoch))
-              logs = {}
+                print('=== Epoch: {} ==='.format(epoch))
+                logs = {}
 
-              for phase in ['train', 'val']:
-                if phase == 'train':
-                    iter_obj = iter(tr_dataloader)
-                    model.train()
-                    model = model.to(device)
-                else:
-                    iter_obj = iter(val_dataloader)
-                    model.eval()
-                
-                for batch in tqdm(iter_obj):
-                  data, paths = embed(batch, i, False, graph.edge_index, device, img_h, img_w, "labels_only", None, None, None)
-                  if phase == 'train':
-                    loss, acc, preds, h = train(data, model, loss_fn, optimizer)
-                    train_loss.append(loss.item())
-                    train_acc.append(acc)
-                  else:
-                    loss, acc, preds, h = val(data, model, loss_fn, optimizer)
-                    val_loss.append(loss.item())
-                    val_acc.append(acc)
-                # end for loop over batches
-                # compute avg loss and acc over epoch
-                if phase == 'train':
-                  print('Avg Batch Train Loss: {}, Avg Batch Train Acc: {}'.format(np.mean(train_loss[-num_tr_iterations:]), np.mean(train_acc[-num_tr_iterations:]))) 
-                  logs['loss'] = np.mean(train_loss[-num_tr_iterations:])
-                  logs['acc'] = np.mean(train_acc[-num_tr_iterations:])
-                  writer.add_scalars('train_loss', logs['loss'], epoch)
-                  writer.add_scalars('train_acc', logs['acc'], epoch)
-                else:
-                  print('Avg Batch Val Loss: {}, Avg Batch Val Acc: {}'.format(np.mean(val_loss[-num_val_iterations:]), np.mean(val_acc[-num_val_iterations:]))) 
-                  if epoch % 2 == 0:
-                      torch.save(model.state_dict(), last_model_path)
-                  # save model if mean val acc is best so far
-                  if np.mean(val_acc) >= best_acc:
-                    best_state = model.state_dict()
-                    torch.save(best_state, best_model_path)
-                    best_acc = np.mean(val_acc)
-                  logs['val_loss'] = np.mean(val_loss[-num_val_iterations:])
-                  logs['val_acc'] = np.mean(val_acc[-num_val_iterations:])
-                  writer.add_scalars('val_loss', logs['loss'], epoch)
-                  writer.add_scalars('val_acc', logs['acc'], epoch)
+                for phase in ['train', 'val']:
+                    # set model state
+                    if phase == 'train':
+                        iter_obj = iter(tr_dataloader)
+                        model.train()
+                        model = model.to(device)
+                    else:
+                        iter_obj = iter(val_dataloader)
+                        model.eval()
 
+                    for batch in tqdm(iter_obj):
+                        data, paths = embed(batch, i, False, graph.edge_index, device, img_h, img_w, "labels_only", None, None, None)
+                        if phase == 'train':
+                            loss, acc, preds, h = train(data, model, loss_fn, optimizer)
+                            train_loss.append(loss.item())
+                            train_acc.append(acc)
+                        else: # val
+                            loss, acc, preds, h = val(data, model, loss_fn)
+                            val_loss.append(loss.item())
+                            val_acc.append(acc)
+                    # end for loop over batches
+                    # compute avg loss and acc over epoch
+                    if phase == 'train':
+                        print('Avg Batch Train Loss: {}, Avg Batch Train Acc: {}'.format(np.mean(train_loss[-num_tr_iterations:]), np.mean(train_acc[-num_tr_iterations:]))) 
+                        logs['loss'] = np.mean(train_loss[-num_tr_iterations:])
+                        logs['acc'] = np.mean(train_acc[-num_tr_iterations:])
+                        #writer.add_scalar('flip_{}/train_loss'.format(str(i)), logs['loss'], epoch)
+                        #writer.add_scalar('flip_{}/train_acc'.format(str(i)), logs['acc'], epoch)
+                        writer.add_scalars('flip_{}/train'.format(str(i)), {'loss': logs['loss'], 'acc': logs['acc']}, epoch)
+                    else:
+                        print('Avg Batch Val Loss: {}, Avg Batch Val Acc: {}'.format(np.mean(val_loss[-num_val_iterations:]), np.mean(val_acc[-num_val_iterations:]))) 
+                        logs['val_loss'] = np.mean(val_loss[-num_val_iterations:])
+                        logs['val_acc'] = np.mean(val_acc[-num_val_iterations:])
+                        #writer.add_scalar('flip_{}/val_loss'.format(str(i)), logs['val_loss'], epoch)
+                        #writer.add_scalar('flip_{}/val_acc'.format(str(i)), logs['val_acc'], epoch)
+                        writer.add_scalars('flip_{}/val'.format(str(i)), {'loss': logs['loss'], 'acc': logs['acc']}, epoch)
+                        # save model every two epochs
+                        if epoch % 2 == 0:
+                            #torch.save(model.state_dict(), last_model_path) # this will get rewritten as model accumulates trains over flip
+                            torch.save(model.state_dict(), flip_model_path(i)) # this will remain unique to the flip
+                        # save model if mean val acc is best so far
+                        if np.mean(val_acc) >= best_acc:
+                            best_state = model.state_dict()
+                            torch.save(best_state, best_model_path)
+                            best_acc = np.mean(val_acc)
+                # end for loop over train/val phases
                 # save loss log at the end of epoch
-                for name in ['train_loss', 'train_acc', 'val_loss', 'val_acc', 'embeddings']:
+                for name in ['train_loss', 'train_acc', 'val_loss', 'val_acc']:
                   save_list_to_file(os.path.join(save_dir, dir_name, name + '.txt'), locals()[name])
-                
+
                 torch.cuda.empty_cache() 
                 torch.autograd.set_detect_anomaly(True)  
-                writer.flush()
+            # end for loop over epochs
+            writer.flush()
+            # reset model parameters for next flip
+            reset_weights(model)
+        # end for loop over num_flips
         
-                
+        ### ADD CODE TO RESUME LAST STATE ###
+        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

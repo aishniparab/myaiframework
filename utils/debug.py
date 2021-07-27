@@ -57,9 +57,4 @@ def test_optimal_decision_rule(tr_dataloader, model, loss_fn, optimizer, num_sam
 	  batch = next(iter(tr_dataloader))
 	  data, paths = embed(batch, i, False, edge_index, device, img_h, img_w, debug_step, embedding_weight, sample, vector_dim)
 	  loss, acc, out, h = train(data, model, loss_fn, optimizer)
-	for i in range(num_samples, -1, -1):
-	  print("num flips = ", i)
-	  batch = next(iter(tr_dataloader))
-	  data, paths = embed(batch, i, False, edge_index, device, img_h, img_w, debug_step, embedding_weight, sample, vector_dim)
-	  loss, acc, out, h = train(data, model, loss_fn, optimizer)
 	print('===================================================')

@@ -1,5 +1,12 @@
 import torch
+from torch import nn
 import datetime
+
+def reset_weights(model):
+  for layer in model.children():
+    if hasattr(layer, 'reset_parameters'):
+      layer.reset_parameters()
+  return model
 
 def get_loss_mask(y, num_flips=0, mask_type=True):
   '''
@@ -48,15 +55,12 @@ def train(data, model, loss_fn, optimizer): # refactor
     probe_y_right = data.y[data.train_mask].view(-1, 2)[:, 1] #(batch_size,) 
     assert probe_y_right.sum() == len(probe_y_right) #if all ones then sum = len
     assert probe_preds.shape[0] == probe_y_right.shape[0] 
-
     loss = loss_fn(probe_preds, probe_y_right)
-    
     optimizer.zero_grad()  # Clear gradients.
     loss.backward(retain_graph=True)  # Derive gradients.
     optimizer.step()  # Update parameters based on gradients.
-    
     acc = compute_acc(probe_preds, probe_y_right)
-    print("cross_entropy_loss: ", loss.item(), "acc: ", acc, "\n")
+    #print("cross_entropy_loss: ", loss.item(), "acc: ", acc, "\n")
     return loss, acc, out, h
 
 def val(data, model, loss_fn):
