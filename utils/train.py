@@ -3,10 +3,8 @@ from torch import nn
 import datetime
 
 def reset_weights(model):
-  for layer in model.children():
-    if hasattr(layer, 'reset_parameters'):
-      layer.reset_parameters()
-  return model
+  # refactor to accept any model and reset all of its parameters
+  model.linear_layer.reset_parameters()
 
 def get_loss_mask(y, num_flips=0, mask_type=True):
   '''

@@ -95,7 +95,6 @@ def main(config):
         debug_step = config['debug_args']['debug_step']
         num_samples_per_class = num_context_per_class + num_probe_per_class
         
-        
         ## Run single tests ## 
         # pass labels into model and flip them, compute loss on all (you should see a U shape)
         #test_optimal_decision_rule(tr_dataloader, model, loss_fn, optimizer, num_samples_per_class, graph.edge_index, device, img_h, img_w, "labels_only", None, None, None)
@@ -184,8 +183,8 @@ def main(config):
                 torch.autograd.set_detect_anomaly(True)  
             # end for loop over epochs
             writer.flush()
-            # reset model parameters for next flip
-            reset_weights(model)
+            # reset model parameters for next flip 
+            reset_weights(model)    
         # end for loop over num_flips
         
         ### ADD CODE TO RESUME LAST STATE ###
