@@ -3,14 +3,14 @@ from torch_geometric.data import Data
 from utils.train import get_loss_mask
 from models.resnet_15 import ResNet15
 
-def embed(batch, num_flip, mask_type, edge_index, device, img_h, img_w, debug_step, embedding_weight, gaussian_sample, vector_dim):
+def embed(batch, num_flip, mask_context, edge_index, device, img_h, img_w, debug_step, embedding_weight, gaussian_sample, vector_dim):
     # refactor this so it does exactly one thing
     '''
     args:
     - batch.x.shape: (batch_num, batch_size, k+1, n, img_h*img_w) 
     - batch.y.shape: (batch_num, batch_size, k+1, n, one_hot_dim=3)
     - num_flip: number of labels to flip
-    - mask_probe: bool indicates whether probe should be masked for loss computation
+    - mask_context: bool indicates whether context should be masked for loss computation
     - debug_step: model input are "gaussian", "resnet_gaussian_labels", "resnet_labels", "labels" 
     returns Data object for model input with flipped 
     - x: flipped labels
@@ -23,7 +23,7 @@ def embed(batch, num_flip, mask_type, edge_index, device, img_h, img_w, debug_st
     edge_index = edge_index.to(device)
     
     # vary n to verify optimal decision rule 
-    loss_mask, y_train = get_loss_mask(y, num_flip, mask_type) # vary n to verify optimal decision rule should not be more than 70% when n=3
+    loss_mask, y_train = get_loss_mask(y, num_flip, mask_context) # vary n to verify optimal decision rule should not be more than 70% when n=3
     loss_mask = loss_mask.to(device)
     y_train = y_train.to(device) # y_train is one hot with unknown label "0 0 1": (batch_num*batch_size*K+1*N, 3)
 

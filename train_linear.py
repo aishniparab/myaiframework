@@ -140,7 +140,7 @@ def main(config):
                         model.eval()
 
                     for batch in tqdm(iter_obj):
-                        data, paths = embed(batch, i, False, graph.edge_index, device, img_h, img_w, "labels_only", None, None, None)
+                        data, paths = embed(batch, i, config['loss_args']['mask_context'], graph.edge_index, device, img_h, img_w, "labels_only", None, None, None)
                         if phase == 'train':
                             loss, acc, preds, h = train(data, model, loss_fn, optimizer)
                             train_loss.append(loss.item())

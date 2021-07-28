@@ -31,6 +31,8 @@ model_args:
   #encoder_args: optim_dec_rule
 
 loss_fn: cross_entropy
+loss_args:
+  mask_context: true
 
 optimizer: adam
 optimizer_args:
