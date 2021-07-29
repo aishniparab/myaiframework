@@ -1,0 +1,47 @@
+num_classes: 2
+num_context_per_class: 6
+num_probe_per_class: 1
+
+batch_size: 10
+
+seed: 123
+
+dataset: bongard
+dataset_args: 
+    path: ../ShapeBongard_V2
+    img_h: 128
+    img_w: 128
+    one_hot_size: 3
+    drop_last: true #assuming dataset_size % batch_size != 0
+
+debug_mode: true
+debug_args: { 'debug_step': "labels_only",
+              'gaussian_args':
+              { 'mean_left': 0.1,
+                'mean_right': 0.8,
+                'std': 0.1,
+                'vector_dim': 128
+              }}
+
+model: project
+model_args:
+  in_dim: 3 #259 #131 
+  out_dim: 1 
+  encoder: resnet
+  #encoder_args: optim_dec_rule
+
+loss_fn: cross_entropy
+loss_args:
+  mask_context: false
+
+optimizer: adam
+optimizer_args:
+  lr: 0.001
+  momentum: 0.9
+  weight_decay: 5.e-4
+
+
+train_args: 
+  num_epochs: 5
+  train_mode: true
+

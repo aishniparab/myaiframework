@@ -79,6 +79,8 @@ def main(config):
     if config['model'] == 'linear':
         model = Linear(random_seed=seed, in_dim=config['model_args']['in_dim'], out_dim=config['model_args']['out_dim'])
         print("Model: ", model, "\n")
+    if config['model'] == 'project':
+        model = MatMul(random_seed=seed, in_dim=config['model_args']['in_dim'], out_dim=config['model_args']['out_dim'])
 
     if config['optimizer'] == 'adam':
         print("Optimizer: ", config['optimizer'], "\n")
@@ -118,6 +120,12 @@ def main(config):
         best_acc = 0
         best_state = None
 
+        batch = next(iter(tr_dataloader))
+        data, paths = embed(batch, i, config['loss_args']['mask_context'], graph.edge_index, device, img_h, img_w, "labels_only", None, None, None)
+        loss, acc, preds, h = train(data, model, loss_fn, optimizer)
+        print("loss: ", loss, "acc: ", acc, "preds: ", preds)
+
+        """
         print("Number of training iterations: ", num_tr_iterations)
         print("Number of validation iterations: ", num_val_iterations)
         # flip labels
@@ -188,7 +196,7 @@ def main(config):
         # end for loop over num_flips
         
         ### ADD CODE TO RESUME LAST STATE ###
-
+        """
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--config')

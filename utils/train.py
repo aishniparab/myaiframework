@@ -28,8 +28,11 @@ def get_loss_mask(y, num_flips=0, mask_type=True):
       sample+=loss_mask 
   
   if mask_type: # mask context
-    is_probe_mask = y_train.clone()
-    is_probe_mask[:, :, -1] += torch.as_tensor([[-1, 0, 0], [0, -1, 0]], dtype=torch.float32)
+    is_probe_mask = y_train.clone() # clone flipped y_train
+    if num_flips < 7:
+      is_probe_mask[:, :, -1] += torch.as_tensor([[-1, 0, 0], [0, -1, 0]], dtype=torch.float32)
+    else:
+      is_probe_mask[:, :, -1] += torch.as_tensor([[0, -1, 0], [-1, 0, 0]], dtype=torch.float32)
     is_probe_mask = is_probe_mask.view(-1, 3)
     is_context_mask = torch.any(is_probe_mask, dim=1)
     loss_mask = ~is_context_mask
